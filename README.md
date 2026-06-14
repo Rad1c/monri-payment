@@ -55,3 +55,21 @@ dotnet run --project .\samples\MonriPaymentGateway.Demo\MonriPaymentGateway.Demo
 ```powershell
 dotnet pack .\src\MonriPaymentGateway\MonriPaymentGateway.csproj -c Release -o .\artifacts
 ```
+
+## Publish
+
+Publishing runs from `.github/workflows/publish.yml` when a version tag is pushed.
+
+Before the first publish, configure NuGet trusted publishing for this repository:
+
+- Repository owner: `Rad1c`
+- Repository: `monri-payment`
+- Workflow file: `publish.yml`
+- Environment: `release`
+
+Create a GitHub environment named `release` and add an environment secret named `NUGET_USER` with your nuget.org username.
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
