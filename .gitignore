@@ -1,0 +1,34 @@
+# Build outputs
+bin/
+obj/
+
+# NuGet package outputs
+artifacts/
+*.nupkg
+*.snupkg
+
+# Visual Studio / Rider / VS Code local files
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Test and coverage outputs
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+coverage.cobertura.xml
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store

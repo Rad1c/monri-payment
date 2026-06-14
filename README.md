@@ -2,6 +2,11 @@
 
 Client library for Monri payment gateway integrations.
 
+## Repository layout
+
+- `src/MonriPaymentGateway` contains the NuGet package source.
+- `samples/MonriPaymentGateway.Demo` contains a runnable console demo.
+
 ## Features
 
 - Builds Monri payment form payloads.
@@ -35,4 +40,18 @@ var request = new MonriPaymentRequest
 };
 
 var response = monriPaymentClient.CreatePayment(request);
+```
+
+## Demo project
+
+Run the sample console app from this repository:
+
+```powershell
+dotnet run --project .\samples\MonriPaymentGateway.Demo\MonriPaymentGateway.Demo.csproj
+```
+
+## Pack
+
+```powershell
+dotnet pack .\src\MonriPaymentGateway\MonriPaymentGateway.csproj -c Release -o .\artifacts
 ```
