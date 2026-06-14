@@ -12,7 +12,10 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureOptions);
 
-        services.Configure(configureOptions);
+        services.AddOptions<MonriOptions>()
+            .Configure(configureOptions)
+            .Validate(ValidateOptions, "Monri payment gateway options are incomplete.");
+
         services.AddHttpClient<IMonriPaymentClient, MonriPaymentClient>((serviceProvider, httpClient) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<MonriOptions>>().Value;
@@ -23,5 +26,13 @@ public static class ServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    private static bool ValidateOptions(MonriOptions options)
+    {
+        return !string.IsNullOrWhiteSpace(options.PaymentUrl) &&
+               !string.IsNullOrWhiteSpace(options.ApiKey) &&
+               !string.IsNullOrWhiteSpace(options.MerchantId) &&
+               !string.IsNullOrWhiteSpace(options.SuccessUrlBase);
     }
 }

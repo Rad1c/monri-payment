@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -101,7 +102,7 @@ public sealed class MonriPaymentClient : IMonriPaymentClient
 
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<TransactionResponseRoot>(cancellationToken);
+        var result = JsonSerializer.Deserialize<TransactionResponseRoot>(responseJson);
         var status = result?.Transaction?.Status;
 
         return new MonriTransactionResult(
@@ -120,7 +121,7 @@ public sealed class MonriPaymentClient : IMonriPaymentClient
         }
 
         var normalizedRequest = string.Concat(_options.SuccessUrlBase, requestUrl.AsSpan(queryIndex));
-        var requestWithoutDigest = GetRequestUrlWithoutDigest(normalizedRequest);
+        var requestWithoutDigest = RemoveDigestFromRequestUrl(normalizedRequest);
         var digestFromRequest = GetDigestFromRequestUrl(normalizedRequest);
 
         if (string.IsNullOrWhiteSpace(digestFromRequest))
@@ -199,27 +200,50 @@ public sealed class MonriPaymentClient : IMonriPaymentClient
         var dataBytes = Encoding.UTF8.GetBytes(dataToHash);
         var hashBytes = SHA512.HashData(dataBytes);
 
-        var digestBuilder = new StringBuilder();
-        foreach (var b in hashBytes)
-        {
-            digestBuilder.Append(b.ToString("x2"));
-        }
-
-        return digestBuilder.ToString();
+        return Convert.ToHexString(hashBytes).ToLowerInvariant();
     }
 
-    private static string GetRequestUrlWithoutDigest(string url)
+    private static string RemoveDigestFromRequestUrl(string url)
     {
-        var digestIndex = url.IndexOf("&digest", StringComparison.Ordinal);
-        return digestIndex < 0 ? url : url[..digestIndex];
+        var digestIndex = url.IndexOf("?digest=", StringComparison.Ordinal);
+        if (digestIndex < 0)
+        {
+            digestIndex = url.IndexOf("&digest=", StringComparison.Ordinal);
+        }
+
+        if (digestIndex < 0)
+        {
+            return url;
+        }
+
+        var nextParameterIndex = url.IndexOf('&', digestIndex + 1);
+        if (nextParameterIndex < 0)
+        {
+            return url[..digestIndex];
+        }
+
+        return string.Concat(url.AsSpan(0, digestIndex), url.AsSpan(nextParameterIndex));
     }
 
     private static string? GetDigestFromRequestUrl(string url)
     {
-        const string digestKey = "&digest=";
-        var digestIndex = url.IndexOf(digestKey, StringComparison.Ordinal);
+        var digestIndex = url.IndexOf("?digest=", StringComparison.Ordinal);
+        var digestKeyLength = "?digest=".Length;
+        if (digestIndex < 0)
+        {
+            digestIndex = url.IndexOf("&digest=", StringComparison.Ordinal);
+            digestKeyLength = "&digest=".Length;
+        }
 
-        return digestIndex < 0 ? null : url[(digestIndex + digestKey.Length)..];
+        if (digestIndex < 0)
+        {
+            return null;
+        }
+
+        var digestValueStart = digestIndex + digestKeyLength;
+        var digestValueEnd = url.IndexOf('&', digestValueStart);
+
+        return digestValueEnd < 0 ? url[digestValueStart..] : url[digestValueStart..digestValueEnd];
     }
 
     private sealed class TransactionResponseRoot

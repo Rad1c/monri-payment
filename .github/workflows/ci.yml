@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore MonriPaymentGateway.slnx
+
+      - name: Build
+        run: dotnet build MonriPaymentGateway.slnx -c Release --no-restore
+
+      - name: Run demo
+        run: dotnet run --project samples/MonriPaymentGateway.Demo/MonriPaymentGateway.Demo.csproj -c Release --no-build
+
+      - name: Pack
+        run: dotnet pack src/MonriPaymentGateway/MonriPaymentGateway.csproj -c Release --no-build -o ./artifacts
