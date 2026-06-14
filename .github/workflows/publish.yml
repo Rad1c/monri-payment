@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version to publish, for example 1.0.0'
+        required: true
+        type: string
 
 jobs:
   publish:
@@ -22,16 +28,22 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Extract version from tag
+      - name: Resolve package version
         id: version
         shell: bash
         run: |
-          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
-            echo "::error::This workflow publishes only from version tags such as v1.0.0."
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::Version is required. Use a tag such as v1.0.0 or provide the workflow_dispatch version input."
             exit 1
           fi
 
-          echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Validate version matches project
         shell: bash
